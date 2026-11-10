@@ -1259,7 +1259,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::A3TalkingCube
   gatewayBaseUrl: https://api.aigateway.umn.edu
-  apiKey: sk-MsqCmK8gdQrIDvWqqJoGsA
+  apiKey: 
   sttModel: gemini-3.5-transcribe-preview
   chatModel: gpt-6-luna
   ttsModel: azure-tts

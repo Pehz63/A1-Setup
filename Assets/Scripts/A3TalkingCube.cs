@@ -73,6 +73,10 @@ public class A3TalkingCube : MonoBehaviour
 
     void Start()
     {
+        // Fall back to the UMN_AI_KEY environment variable so the key never has to be saved in the scene.
+        if (string.IsNullOrWhiteSpace(apiKey) || apiKey.Trim().StartsWith("<"))
+            apiKey = Environment.GetEnvironmentVariable("UMN_AI_KEY");
+
         // The gateway client is already set up for you (do not change unless instructed).
         if (string.IsNullOrWhiteSpace(apiKey) || apiKey.Trim().StartsWith("<"))
         {
