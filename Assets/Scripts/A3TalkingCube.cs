@@ -38,7 +38,7 @@ public class A3TalkingCube : MonoBehaviour
     [SerializeField] private string chatModel = "gpt-6-luna";
     [SerializeField] private string ttsModel = "azure-tts";
     [SerializeField] private string ttsVoice = "alloy";
-    [SerializeField] private string systemPrompt = "You are a friendly talking cube for University of Minnesota's AI-enabled MR class. Your replies are spoken aloud, so don't use markdown or emoji.";
+    [SerializeField] private string systemPrompt = "You are a friendly talking cube with eyes. You can see what the user sees through their headset camera. When the user asks about something in their view, describe what you see. Keep answers short. Your replies are spoken aloud, so don't use markdown or emoji.";
 
     [Header("Recording")]
     [SerializeField] private int maxRecordingSeconds = 15;
@@ -49,6 +49,9 @@ public class A3TalkingCube : MonoBehaviour
     [SerializeField] private Color recordingColor = Color.red;
     [SerializeField] private Color processingColor = Color.yellow;
     [SerializeField] private Color speakingColor = Color.green;
+
+    [Header("Camera")]
+    [SerializeField] private A4CameraFrameProvider cameraFrameProvider;
 
     // ── State ────────────────────────────────────────────────────────────────
     private enum State { Idle, Recording, Processing, Speaking }
@@ -174,6 +177,13 @@ public class A3TalkingCube : MonoBehaviour
                 return;
             }
 
+            // TODO: A4
+            Texture2D snapshot = null;
+            if (cameraFrameProvider != null)
+            {
+                snapshot = await cameraFrameProvider.CaptureFrameAsync();
+            }
+
             // TODO (Part B.2): Text → LLM
             // - Add the user's words to history:  { "role": "user", "content": userText }
             // - Build the request body:           { "model": chatModel, "messages": history }
@@ -182,7 +192,29 @@ public class A3TalkingCube : MonoBehaviour
             // - Add the reply to history:          { "role": "assistant", "content": reply }
 
             history.Add(new JObject { ["role"] = "user", ["content"] = userText });
-            JObject chatBody = new JObject { ["model"] = chatModel, ["messages"] = history };
+
+            // Build the request messages: use history as-is for all past turns,
+            // but replace the last message with a multimodal version if we have a snapshot
+            var requestMessages = (JArray)history.DeepClone();
+
+            if (snapshot != null)
+            {
+                string snapshotBase64 = Convert.ToBase64String(snapshot.EncodeToJPG(75));
+                requestMessages[requestMessages.Count - 1] = new JObject {
+                    ["role"] = "user",
+                    ["content"] = new JArray {
+                        new JObject {
+                            ["type"] = "image_url",
+                            ["image_url"] = new JObject {
+                                ["url"] = "data:image/jpeg;base64," + snapshotBase64
+                            }
+                        },
+                        new JObject { ["type"] = "text", ["text"] = userText }
+                    }
+                };
+            }
+
+            JObject chatBody = new JObject { ["model"] = chatModel, ["messages"] = requestMessages };
             JObject chatResponse = await gateway.PostJsonAsync("/v1/chat/completions", chatBody, token);
             string chatReply = AIGatewayClient.ContentAsText(chatResponse["choices"][0]["message"]["content"]);
             history.Add(new JObject { ["role"] = "assistant", ["content"] = chatReply });

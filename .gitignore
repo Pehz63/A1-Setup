@@ -115,3 +115,11 @@ InitTestScene*.unity*
 
 # Unity build backup folders (IL2CPP output)
 *_BackUpThisFolder_ButDontShipItWithYourGame/
+
+# Unity crash-recovery scene backups
+/[Aa]ssets/_Recovery/
+/[Aa]ssets/_Recovery.meta
+
+# Embedded copy of a registry package (manifest.json pulls 2.3.0)
+/[Pp]ackages/com.unity.ai.inference/
+/[Pp]ackages/com.unity.ai.inference.meta
